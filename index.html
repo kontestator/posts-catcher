@@ -1,29 +1,24 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <title>VK Auth Callback</title>
-    <style>
-        body { font-family: sans-serif; padding: 2em; line-height: 1.5; }
-        code { background: #eee; padding: 0.2em 0.4em; border-radius: 3px; }
-    </style>
-</head>
-<body>
-    <h1>VK Auth Helper</h1>
-    <p>Если вы видите эту страницу, значит, редирект сработал.</p>
-    <p>Ваш код авторизации (скопируйте его):</p>
-    <code id="code">...загрузка...</code>
-
-    <script>
-        const params = new URLSearchParams(window.location.search);
-        const code = params.get('code');
-        const codeElement = document.getElementById('code');
-
-        if (code) {
-            codeElement.textContent = code;
-        } else {
-            codeElement.textContent = "Код не найден в URL. Что-то пошло не так.";
-        }
-    </script>
-</body>
-</html>
+<!doctype html>
+<html lang="ru">
+<meta charset="utf-8" />
+<title>VK OAuth Callback</title>
+<style>
+  body { font: 16px/1.4 system-ui, sans-serif; max-width: 720px; margin: 5rem auto; }
+  code, input { font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; }
+  .box { padding: 1rem; border: 1px solid #ccc; border-radius: 8px; }
+</style>
+<h1>Готово! Скопируй код авторизации</h1>
+<p>Если ты видишь ошибку — посмотри параметры в адресной строке.</p>
+<div class="box">
+  <p><strong>code:</strong> <code id="code">—</code></p>
+  <button id="copy">Скопировать</button>
+</div>
+<script>
+  const p = new URLSearchParams(location.search);
+  const code = p.get('code') || '';
+  document.getElementById('code').textContent = code || '(нет ?code в URL)';
+  document.getElementById('copy').onclick = async () => {
+    await navigator.clipboard.writeText(code);
+    alert('Скопировано!');
+  };
+</script>
