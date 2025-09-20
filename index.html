@@ -1,0 +1,29 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>VK Auth Callback</title>
+    <style>
+        body { font-family: sans-serif; padding: 2em; line-height: 1.5; }
+        code { background: #eee; padding: 0.2em 0.4em; border-radius: 3px; }
+    </style>
+</head>
+<body>
+    <h1>VK Auth Helper</h1>
+    <p>Если вы видите эту страницу, значит, редирект сработал.</p>
+    <p>Ваш код авторизации (скопируйте его):</p>
+    <code id="code">...загрузка...</code>
+
+    <script>
+        const params = new URLSearchParams(window.location.search);
+        const code = params.get('code');
+        const codeElement = document.getElementById('code');
+
+        if (code) {
+            codeElement.textContent = code;
+        } else {
+            codeElement.textContent = "Код не найден в URL. Что-то пошло не так.";
+        }
+    </script>
+</body>
+</html>
