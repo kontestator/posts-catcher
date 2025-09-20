@@ -47,7 +47,7 @@
     try {
       const { access_token } = await vkBridge.send('VKWebAppGetAuthToken', {
         app_id: APP_ID,
-        scope: 'wall,groups'
+        scopes: 'wall'
       });
       ACCESS_TOKEN = access_token;
       document.getElementById('btnFetch').disabled = !ACCESS_TOKEN;
@@ -106,4 +106,5 @@
   };
 </script>
 </html>
+
 
