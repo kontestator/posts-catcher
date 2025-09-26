@@ -11,23 +11,24 @@
 </style>
 
 <h1>VK Post Receiver</h1>
-<p>Получаем токен пользователя → читаем 1 пост из сообщества → (опц.) шлём в Make.</p>
+<p>Получаем токен → читаем 17 постов → шлём КАЖДЫЙ пост в Make.</p>
 
 <div style="display:flex; gap:8px; flex-wrap:wrap; margin: 16px 0;">
-  <button id="btnToken">1) Запросить токен</button>
-  <button id="btnFetch" disabled>2) Получить последний пост</button>
-  <button id="btnSend" disabled>3) Отправить в Make</button>
+  <button id="btnToken">1 ) Запросить токен</button>
+  <button id="btnFetch" disabled>2) Получить 17 постов</button>
+  <button id="btnSend" disabled>3) Отправить все в Make</button>
 </div>
 
 <pre id="log">init…</pre>
 
 <script>
   // === ЗАМЕНИ НА СВОЁ ===
-  const APP_ID   = 54160719;
-  const GROUP_ID = 216031511;
-  const MAKE_WEBHOOK = ""; // если не нужно — оставь пустым
+  const APP_ID   = 51420719; // Твой ID приложения
+  const GROUP_ID = 216031511; // ID твоей группы
+  // !!! ВСТАВЬ СЮДА СВОЙ WEBHOOK ИЗ MAKE !!!
+  const MAKE_WEBHOOK = "https://hook.us2.make.com/gto4rg5hbigjl0juv2a1244ld50ves97";
 
-  const log = (...a) => document.getElementById('log').textContent =
+  const log = (...a ) => document.getElementById('log').textContent =
     a.map(x => typeof x === 'string' ? x : JSON.stringify(x, null, 2)).join('\n');
 
   let ACCESS_TOKEN = null;
@@ -35,19 +36,19 @@
 
   (async () => {
     try {
-      await vkBridge.send('VKWebAppInit');         // 1) Инициализация — обязательно
+      await vkBridge.send('VKWebAppInit');
       log('Bridge init: ok. Нажми "Запросить токен".');
     } catch (e) {
       log('Ошибка VKWebAppInit', e?.error_data || e?.message || e);
     }
   })();
 
-  // 2) Запрос токена пользователя (твои права: wall, groups, offline)
+  // --- ШАГ 1: Запрос токена ---
   document.getElementById('btnToken').onclick = async () => {
     try {
       const { access_token } = await vkBridge.send('VKWebAppGetAuthToken', {
         app_id: APP_ID,
-        scopes: 'wall, groups'
+        scope: 'wall,groups'
       });
       ACCESS_TOKEN = access_token;
       document.getElementById('btnFetch').disabled = !ACCESS_TOKEN;
@@ -57,55 +58,68 @@
     }
   };
 
-  // 3) Чтение 1 последнего поста из сообщества
+  // --- ШАГ 2: Чтение 17 последних постов ---
   document.getElementById('btnFetch').onclick = async () => {
     if (!ACCESS_TOKEN) return;
+    log('Запрашиваю 17 постов...');
     try {
       const { response } = await vkBridge.send('VKWebAppCallAPIMethod', {
         method: 'wall.get',
         params: {
-          owner_id: -Math.abs(GROUP_ID),  // для сообществ — со знаком минус
-          count: 1,
+          owner_id: -Math.abs(GROUP_ID),
+          count: 17,
           v: '5.199',
           access_token: ACCESS_TOKEN
         }
       });
       lastResponse = response;
-      document.getElementById('btnSend').disabled = !lastResponse;
-      log('Пост получен ✅', response);
+      document.getElementById('btnSend').disabled = !lastResponse || !lastResponse.items.length;
+      log(`Получено ${response.items.length} постов ✅`, response);
     } catch (e) {
       log('Ошибка wall.get ❌', e?.error_data || e?.message || e);
     }
   };
 
-  // 4) (опционально) Отправка в Make — здесь же можно делать свой разбор поста
+  // --- ШАГ 3: Отправка КАЖДОГО поста в Make ---
   document.getElementById('btnSend').onclick = async () => {
-    if (!lastResponse || !MAKE_WEBHOOK) return log('Webhook не указан.');
-    try {
-      // пример простого разборщика (дополни своими правилами)
-      const item = lastResponse.items?.[0] || {};
-      const payload = {
-        post_id: item.id,
-        date_posted: item.date ? new Date(item.date * 1000).toISOString() : null,
-        text: item.text || '',
-        attachments: item.attachments || [],
-        source_url: `https://vk.com/wall-${GROUP_ID}_${item.id}`,
-        parsed_at: new Date().toISOString()
-      };
+    if (!lastResponse || !MAKE_WEBHOOK) return log('Webhook не указан или посты не получены.');
+    
+    const posts = lastResponse.items || [];
+    if (posts.length === 0) return log('Нет постов для отправки.');
 
-      await fetch(MAKE_WEBHOOK, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(payload)
-      });
+    log(`Начинаю отправку ${posts.length} постов в Make...`);
 
-      log('Отправлено в Make ✅', payload);
-    } catch (e) {
-      log('Ошибка отправки в Make ❌ (проверь CORS)', e?.message || e);
+    for (const item of posts) {
+      try {
+        const payload = {
+          event: "wall_post_new",
+          group_id: GROUP_ID,
+          post_id: item.id,
+          date_unix: item.date,
+          text: item.text || '',
+          attachments: item.attachments || [],
+          from_id: item.from_id,
+          owner_id: item.owner_id,
+          source_url: `https://vk.com/wall-${GROUP_ID}_${item.id}`,
+          received_at: new Date( ).toISOString()
+        };
+
+        await fetch(MAKE_WEBHOOK, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(payload)
+        });
+
+        log(`Пост #${item.id} успешно отправлен в Make ✅`);
+        // ИЗМЕНЕНО: Пауза увеличена до 2 секунд для стабильной работы
+        await new Promise(resolve => setTimeout(resolve, 5000));
+
+      } catch (e) {
+        log(`Ошибка отправки поста #${item.id} ❌`, e?.message || e);
+      }
     }
+
+    log('Все посты отправлены! 🎉');
   };
 </script>
 </html>
-
-
-
