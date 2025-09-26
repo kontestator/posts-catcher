@@ -11,11 +11,11 @@
 </style>
 
 <h1>VK Post Receiver</h1>
-<p>Получаем токен → читаем 17 постов → шлём КАЖДЫЙ пост в Make.</p>
+<p>Получаем токен → читаем 18 постов → шлём КАЖДЫЙ пост в Make.</p>
 
 <div style="display:flex; gap:8px; flex-wrap:wrap; margin: 16px 0;">
   <button id="btnToken">1 ) Запросить токен</button>
-  <button id="btnFetch" disabled>2) Получить 17 постов</button>
+  <button id="btnFetch" disabled>2) Получить 18 постов</button>
   <button id="btnSend" disabled>3) Отправить все в Make</button>
 </div>
 
@@ -58,16 +58,16 @@
     }
   };
 
-  // --- ШАГ 2: Чтение 17 последних постов ---
+  // --- ШАГ 2: Чтение 18 последних постов ---
   document.getElementById('btnFetch').onclick = async () => {
     if (!ACCESS_TOKEN) return;
-    log('Запрашиваю 17 постов...');
+    log('Запрашиваю 18 постов...');
     try {
       const { response } = await vkBridge.send('VKWebAppCallAPIMethod', {
         method: 'wall.get',
         params: {
           owner_id: -Math.abs(GROUP_ID),
-          count: 17,
+          count: 18,
           v: '5.199',
           access_token: ACCESS_TOKEN
         }
