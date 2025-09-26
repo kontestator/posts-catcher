@@ -112,7 +112,7 @@
 
         log(`Пост #${item.id} успешно отправлен в Make ✅`);
         // ИЗМЕНЕНО: Пауза увеличена до 2 секунд для стабильной работы
-        await new Promise(resolve => setTimeout(resolve, 5000));
+        await new Promise(resolve => setTimeout(resolve, 30000));
 
       } catch (e) {
         log(`Ошибка отправки поста #${item.id} ❌`, e?.message || e);
